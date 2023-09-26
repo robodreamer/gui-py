@@ -3,14 +3,24 @@ from nicegui import ui
 from nicegui.events import ValueChangeEventArguments
 
 dark = ui.dark_mode()
+dark.enable()
+
+def time_convert(sec):
+    mins = sec // 60
+    sec = sec % 60
+    hours = mins // 60
+    mins = mins % 60
+    time_stamp = "Time Lapsed = {0}:{1}:{2}".format(int(hours),int(mins),sec)
+    return time_stamp
 
 class Demo:
     def __init__(self):
         self.position_sensitivity = 1
         self.rotation_sensitivity = 1
         self.recording = False
-        self.start_time = None
+        self.start_time = datetime.now()
         self.elapsed_time = None
+        self.timer = None
 
     def show(self, event: ValueChangeEventArguments):
         name = type(event.sender).__name__
@@ -29,6 +39,9 @@ class Demo:
         self.elapsed_time = datetime.now() - self.start_time
         ui.notify(f"Recording stopped. Elapsed time: {self.elapsed_time}")
 
+    def update_timer(self):
+        elapsed_time = datetime.now() - self.start_time
+        ui.notify(f"Elapsed time: {elapsed_time}")
 
 demo = Demo()
 
@@ -79,12 +92,21 @@ with ui.tab_panels(tabs, value="Teleop Settings").classes("w-full"):
             ui.button("Start Recording", on_click=demo.start_recording)
             ui.button("Pause Recording", on_click=demo.pause_recording)
             ui.button("Stop Recording", on_click=demo.stop_recording)
+
+
+        label = ui.label()
+        ui.timer(1.0, lambda: label.set_text(f'{datetime.now():%X}'))
+
         ui.label(f"Start Time for Record: {demo.start_time}").bind_visibility_from(
             demo, "recording"
         )
+        ui.label(f"Elapsed Time: {demo.elapsed_time}").bind_visibility_from(
+            demo, "recording"
+        )
         with ui.row():
-            switch = ui.switch("switch me")
-            ui.label("Switch!").bind_visibility_from(switch, "value")
+            switch = ui.switch("Collision Constraints")
+            ui.label("Collision Avoidance ON").bind_visibility_from(switch, "value")
+
     with ui.tab_panel("Robot Status"):
         ui.label("Joint Positions")
         ui.label('A1')
@@ -112,7 +134,5 @@ with ui.tab_panels(tabs, value="Teleop Settings").classes("w-full"):
         ui.label('Switch mode:')
         ui.button('Dark', on_click=dark.enable)
         ui.button('Light', on_click=dark.disable)
-
-
 
 ui.run()
